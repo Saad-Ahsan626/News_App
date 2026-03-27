@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:news_app/screens/feed_screen.dart';
+import 'package:news_app/screens/main_screen.dart';
 import 'package:news_app/widgets/category_screen.dart';
+import 'package:news_app/services/preferences_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,26 +18,22 @@ class _HomeScreenState extends State<HomeScreen> {
     {
       'name': 'Tech',
       'icon': Icons.memory,
-      'imageUrl':
-          'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800',
+      'imageUrl': 'assets/images/tech.jpg',
     },
     {
       'name': 'Politics',
       'icon': Icons.account_balance,
-      'imageUrl':
-          'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&q=80&w=800',
+      'imageUrl': 'assets/images/politics.jpg',
     },
     {
       'name': 'Science',
       'icon': Icons.science,
-      'imageUrl':
-          'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&q=80&w=800',
+      'imageUrl': 'assets/images/science.jpg',
     },
     {
       'name': 'Sports',
       'icon': Icons.sports_basketball,
-      'imageUrl':
-          'https://images.unsplash.com/photo-1504450758481-7338eba7524a?auto=format&fit=crop&q=80&w=800',
+      'imageUrl': 'assets/images/sports.jpg',
     },
   ];
 
@@ -51,8 +48,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF000666);
+    final secondaryTextColor = isDark ? Colors.grey[400] : Colors.grey[700];
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8FF),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -67,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF000666),
+                    color: Colors.blueAccent,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
@@ -86,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: GoogleFonts.newsreader(
                   fontSize: 48,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF000666),
+                  color: textColor,
                   height: 1.1,
                 ),
               ),
@@ -95,13 +96,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Select your interests and stay updated on what matters to you.',
                 style: GoogleFonts.workSans(
                   fontSize: 18,
-                  color: Colors.grey[700],
+                  color: secondaryTextColor,
                   height: 1.5,
                 ),
               ),
               const SizedBox(height: 32),
 
-              
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -132,21 +132,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(24),
                         color: interest['imageUrl'] != null
-                            ? Colors.grey[200]
-                            : const Color(0xFFF2F3FF),
+                            ? Theme.of(context).cardColor
+                            : (isDark ? const Color(0xFF1A2251) : const Color(0xFFF2F3FF)),
                         image: interest['imageUrl'] != null
                             ? DecorationImage(
-                                image: NetworkImage(interest['imageUrl']),
+                                image: AssetImage(interest['imageUrl']),
                                 fit: BoxFit.cover,
                                 colorFilter: ColorFilter.mode(
-                                  Colors.black.withOpacity(0.3),
+                                  Colors.black.withAlpha((0.5 * 255).toInt()),
                                   BlendMode.darken,
                                 ),
                               )
                             : null,
                         border: isSelected && interest['imageUrl'] == null
                             ? Border.all(
-                                color: const Color(0xFF000666),
+                                color: Colors.blueAccent,
                                 width: 2,
                               )
                             : null,
@@ -163,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   interest['icon'],
                                   color: interest['imageUrl'] != null
                                       ? Colors.white
-                                      : const Color(0xFF000666),
+                                      : Colors.blueAccent,
                                   size: 32,
                                 ),
                                 const SizedBox(height: 12),
@@ -174,8 +174,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     fontWeight: FontWeight.w900,
                                     letterSpacing: 1,
                                     color: interest['imageUrl'] != null
-                                        ? Colors.white
-                                        : const Color(0xFF000666),
+                                      ? Colors.white
+                                      : textColor,
                                   ),
                                 ),
                               ],
@@ -212,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
-                  color: const Color(0xFF000666).withOpacity(0.6),
+                  color: isDark ? Colors.grey[500] : Colors.grey[600],
                 ),
               ),
               const SizedBox(height: 16),
@@ -229,10 +229,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     isSelected: isSelected,
                     onSelected: () {
                       setState(() {
-                        if (isSelected)
+                        if (isSelected) {
                           _selectedInterests.remove(interest['name']);
-                        else
+                        } else {
                           _selectedInterests.add(interest['name']);
+                        }
                       });
                     },
                   );
@@ -243,12 +244,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: double.infinity,
                 height: 64,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const FeedScreen()),
-                  ),
+                  onPressed: () async {
+                    if (_selectedInterests.isEmpty) return;
+                    await PreferencesService().saveInterests(_selectedInterests.cast<String>().toList());
+                    if (!context.mounted) return;
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MainScreen()),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF000666),
+                    backgroundColor: Colors.blueAccent,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(32),
