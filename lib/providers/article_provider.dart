@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:news_app/data/repositories/article_repository.dart';
+import 'package:news_app/data/models/article_model.dart';
+import 'package:news_app/services/preferences_service.dart';
 
 class ArticleProvider with ChangeNotifier {
   final ArticleRepository repo = ArticleRepository();
+  final PreferencesService _prefs = PreferencesService();
 
-  List _articles = [];
+  List<Article> _articles = [];
   bool _isLoading = false;
   String _errorMessage = '';
 
-  List get articles => _articles;
+  List<Article> get articles => _articles;
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
-  Future getNews() async {
+  Future<void> loadNews() async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
 
     try {
-      _articles = await repo.getNews();
+      final interests = await _prefs.getInterests();
+      _articles = await repo.getNews(interests);
     } catch (e) {
       _errorMessage = 'Could not fetch news. Please check your connection.';
     } finally {
