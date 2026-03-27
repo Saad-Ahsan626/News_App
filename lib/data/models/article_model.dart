@@ -20,11 +20,20 @@ class Article {
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       url: json['url'] ?? '',
-      urlToImage:
-          json['urlToImage'] ??
-          'https://images.unsplash.com/photo-1504711432869-5d39a110fdd7?auto=format&fit=crop&q=80&w=800',
+      urlToImage: json['urlToImage'] ?? '',
       publishedAt: json['publishedAt'] ?? '',
       sourceName: json['source']?['name'] ?? 'Unknown Source',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'description': description,
+      'url': url,
+      'urlToImage': urlToImage,
+      'publishedAt': publishedAt,
+      'source': {'name': sourceName},
+    };
   }
 }
